@@ -13,11 +13,41 @@ return [
             'Omeka\AuthenticationService' => UserNames\Service\AuthenticationServiceFactory::class
         ]
     ],
-//         'view_manager' => [
-//                 'template_path_stack' => [
-//                         OMEKA_PATH . '/modules/RestrictedSites/view'
-//                 ]
-//         ],
+    'controllers' => [
+      'factories' => [
+          'UserNames\Controller\Login' => UserNames\Service\Controller\LoginControllerFactory::class,
+      ],
+    ],
+    'router' => [
+        'routes' => [
+            'login' => [
+                'type' => \Zend\Router\Http\Regex::class,
+                'options' => [
+                    'regex' => '/login(/.*)?',
+                    'spec' => '/login',
+                    'defaults' => [
+                        'controller' => 'UserNames\Controller\Login',
+                        'action' => 'login',
+                    ],
+                ],
+            ],
+            ],
+        ],
+    'translator' => [
+        'translation_file_patterns' => [
+            [
+                'type' => 'gettext',
+                'base_dir' => OMEKA_PATH . '/modules/UserNames/language',
+                'pattern' => '%s.mo',
+                'text_domain' => null
+            ]
+        ]
+    ],
+    'view_manager' => [
+        'template_path_stack' => [
+            OMEKA_PATH . '/modules/UserNames/view'
+        ]
+    ],
 //         'controllers' => [
 //                 'factories' => [
 //                         'RestrictedSites\Controller\Site\SiteLogin' => RestrictedSites\Service\Controller\Site\SiteLoginControllerFactory::class,

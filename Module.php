@@ -17,6 +17,10 @@ class Module extends AbstractModule
     public function attachListeners (
             SharedEventManagerInterface $sharedEventManager)
     {
+        $sharedEventManager->attach('Omeka\Form\LoginForm', 'form.add_elements', [
+            $this,
+            'modifyLoginForm'
+        ]);
     }
 
 
@@ -131,11 +135,22 @@ class Module extends AbstractModule
     {
         parent::onBootstrap($event);
 
-//         /** @var Acl $acl */
-//         $acl = $this->getServiceLocator()->get('Omeka\Acl');
-//         $acl->allow(null,
-//                 [
-//                         'RestrictedSites\Controller\Site\SiteLogin'
-//                 ], null);
+        /** @var Acl $acl */
+        $acl = $this->getServiceLocator()->get('Omeka\Acl');
+        $acl->allow(null, [
+            'UserNames\Controller\Login'
+        ], null);
+    }
+
+    public function modifyLoginForm(EventInterface $event)
+    {
+        /** @var \Omeka\Form\UserForm $form */
+        $form = $event->getTarget();
+
+        $form->get('email')->setOptions([
+            'label' => 'Username or email' // @translate
+        ]);
+
+        return;
     }
 }
