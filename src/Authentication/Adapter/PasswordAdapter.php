@@ -15,14 +15,18 @@ class PasswordAdapter extends AbstractAdapter
      */
     protected $repository;
 
+
+    protected $userNameRepository;
+
     /**
      * Create the adapter.
      *
      * @param EntityRepository $repository The User repository.
      */
-    public function __construct(EntityRepository $repository)
+    public function __construct(EntityRepository $repository, EntityRepository $userNameRepository)
     {
         $this->setRepository($repository);
+        $this->setUserNameRepository($userNameRepository);
     }
 
     public function authenticate()
@@ -30,10 +34,9 @@ class PasswordAdapter extends AbstractAdapter
         $user = $this->repository->findOneBy(['email' => $this->identity]);
 
         if (!$user) { //Seems to work?
-            $qb = $this->repository->createQueryBuilder('*');
-            $qb->join('user_names', 'user_id')->where('user_name = ' . $this->identity);
-            $query = $qb->getQuery();
-            $user = $query->getFirstResult();
+            if ($userName = $this->userNameRepository->findOneBy(['userName' => $this->identity])) {
+                $user = $this->repository->findOneBy(['id' => $userName->getId()]);
+            }
         }
 
         if (!$user || !$user->isActive()) {
@@ -59,6 +62,11 @@ class PasswordAdapter extends AbstractAdapter
         $this->repository = $repository;
     }
 
+    public function setUserNameRepository(EntityRepository $userNameRepository)
+    {
+        $this->userNameRepository = $userNameRepository;
+    }
+
     /**
      * Get the repository used to look up users.
      *
@@ -67,5 +75,10 @@ class PasswordAdapter extends AbstractAdapter
     public function getRepository()
     {
         return $this->repository;
+    }
+
+    public function getUserNameRepository()
+    {
+        return $this->userNameRepository;
     }
 }

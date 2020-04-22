@@ -37,7 +37,7 @@ class LoginController extends \Omeka\Controller\LoginController
                     }
                     return $this->redirect()->toRoute('admin');
                 } else {
-                    $this->messenger()->addError('Email or password is invalid'); // @translate
+                    $this->messenger()->addError('User name, email, or password is invalid'); // @translate
                 }
             } else {
                 $this->messenger()->addFormErrors($form);

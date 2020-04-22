@@ -48,6 +48,11 @@ return [
             OMEKA_PATH . '/modules/UserNames/view'
         ]
     ],
+    'api_adapters' => [
+        'invokables' => [
+            'usernames' => UserNames\Api\Adapter\UserNameAdapter::class
+        ]
+    ],
 //         'controllers' => [
 //                 'factories' => [
 //                         'RestrictedSites\Controller\Site\SiteLogin' => RestrictedSites\Service\Controller\Site\SiteLoginControllerFactory::class,
