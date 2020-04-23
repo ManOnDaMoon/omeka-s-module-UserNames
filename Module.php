@@ -12,9 +12,14 @@ use Omeka\Permissions\Acl;
 use Omeka\Api\Exception\ValidationException;
 use Omeka\Stdlib\ErrorStore;
 use Omeka\Stdlib\Message;
+use UserNames\Entity\UserNames;
+use Zend\Validator\Regex;
 
 class Module extends AbstractModule
 {
+    // TODO: make the following constraints configurable
+    const USERNAME_MIN_LENGTH = 1;
+    const USERNAME_MAX_LENGTH = 30;
 
     /**
      * Attach to Zend and Omeka specific listeners
@@ -24,9 +29,9 @@ class Module extends AbstractModule
     {
         $sharedEventManager->attach('Omeka\Api\Adapter\UserAdapter', 'api.create.pre', [
             $this,
-            'checkUserName'
+            'validateUserName'
         ]);
-        
+
         $sharedEventManager->attach('Omeka\Api\Adapter\UserAdapter', 'api.create.post', [
             $this,
             'handleUserName'
@@ -46,12 +51,12 @@ class Module extends AbstractModule
             $this,
             'addUserNameField'
         ]);
-        
+
         $sharedEventManager->attach('Omeka\Controller\Admin\User', 'view.show.after', [
             $this,
             'userViewShowAfter'
         ]);
-        
+
         $sharedEventManager->attach('Omeka\Controller\Admin\User', 'view.details', [
             $this,
             'userViewDetails'
@@ -232,31 +237,59 @@ class Module extends AbstractModule
             $response = $api->update('usernames', $userName['id'], $userName);
         }
     }
-    
-    public function checkUserName(EventInterface $event)
+
+    public function throwValidationException($property, Message $message)
     {
-        /** @var \Omeka\Api\Adapter\UserAdapter $userAdapter */
-        $userAdapter = $event->getTarget();
+        $errorStore = new ErrorStore();
+        $errorStore->addError($property, $message);
+        $validationException = new ValidationException();
+        $validationException->setErrorStore($errorStore);
+        throw $validationException;
+    }
+
+    public function validateUserName(EventInterface $event)
+    {
+        //FIXME : Need to run the whole validation procedure in order to keep Omeka S from creating the user without its username
         $request = $event->getParam('request');
-        
+        $userNameProperty = 'o-module-usernames:username';
+        $userName = $request->getContent()[$userNameProperty];
+
+        // Empty username
+        if (!$userName) {
+            $this->throwValidationException($userNameProperty, new Message(
+                'The user name cannot be empty.' // @translate
+                ));
+        }
+
+        // Username length
+        if (strlen($userName) < self::USERNAME_MIN_LENGTH || strlen($userName) > self::USERNAME_MAX_LENGTH) {
+            $this->throwValidationException($userNameProperty, new Message(
+                'User name must be between %1$s and %2$s characters.', // @translate
+                self::USERNAME_MIN_LENGTH, self::USERNAME_MAX_LENGTH
+                ));
+        }
+
+        // Invalid username
+        $validator = new Regex('#^[a-zA-Z0-9.*@+!\-_%\#\^&$]*$#u');
+        if (!$validator->isValid($userName)) {
+            $this->throwValidationException($userNameProperty, new Message(
+                'Whitespace is not allowed. Only these special characters may be used: %s', // @translate
+                ' + ! @ # $ % ^ & * . - _'
+                ));
+        }
+
+        // Existing username
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        
-        $userName['o-module-usernames:username'] = $request->getContent()['o-module-usernames:username'];
-        
-        $searchResponse = $api->search('usernames', ['userName' => $userName['o-module-usernames:username']]);
+        $searchResponse = $api->search('usernames', ['userName' => $userName]);
         if (!empty($searchResponse->getContent())) {
             // Username exists. Warn.
-            $errorStore = new ErrorStore();
-            $errorStore->addError('o-module-usernames:username', new Message(
+            $this->throwValidationException($userNameProperty, new Message(
                 'The user name %s is already taken.', // @translate
-                $userName['o-module-usernames:username']
+                $userName
                 ));
-            $validationException = new ValidationException();
-            $validationException->setErrorStore($errorStore);
-            throw $validationException;
         }
     }
-    
+
     public function renderUserName($userId, PhpRenderer $phpRenderer, $partial)
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
@@ -269,7 +302,7 @@ class Module extends AbstractModule
             ]);
         }
     }
-    
+
     public function userViewShowAfter(EventInterface $event)
     {
         $userId = $event->getTarget()->vars()->user->id();
