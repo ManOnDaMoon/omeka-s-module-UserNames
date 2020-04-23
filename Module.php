@@ -49,7 +49,12 @@ class Module extends AbstractModule
         
         $sharedEventManager->attach('Omeka\Controller\Admin\User', 'view.show.after', [
             $this,
-            'addUserDetail'
+            'userViewShowAfter'
+        ]);
+        
+        $sharedEventManager->attach('Omeka\Controller\Admin\User', 'view.details', [
+            $this,
+            'userViewDetails'
         ]);
     }
 
@@ -252,22 +257,27 @@ class Module extends AbstractModule
         }
     }
     
-    public function addUserDetail(EventInterface $event)
+    public function renderUserName($userId, PhpRenderer $phpRenderer, $partial)
     {
-        /** @var PhpRenderer $phpRenderer */
-        $phpRenderer = $event->getTarget();
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-
-        $resource = $event->getTarget()->vars()->user;
-        $userId = $resource->id();
-
         $searchResponse = $api->search('usernames', [
             'id' => $userId
         ]);
         if (! empty($userName = $searchResponse->getContent())) {
-            echo $phpRenderer->partial('common/admin/username', [
+            echo $phpRenderer->partial($partial, [
                 'username' => $userName[0]->userName()
             ]);
         }
+    }
+    
+    public function userViewShowAfter(EventInterface $event)
+    {
+        $userId = $event->getTarget()->vars()->user->id();
+        $this->renderUserName($userId, $event->getTarget(), 'common/admin/username-show');
+    }
+    public function userViewDetails(EventInterface $event)
+    {
+        $userId = $event->getTarget()->vars()->resource->id();
+        $this->renderUserName($userId, $event->getTarget(), 'common/admin/username-detail');
     }
 }

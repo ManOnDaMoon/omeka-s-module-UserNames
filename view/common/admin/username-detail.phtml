@@ -1,0 +1,8 @@
+<?php
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+?>
+<div class="meta-group">
+    <h4><?php echo $translate('User name'); ?></h4>
+    <div class="value"><?php echo $escape($username); ?></div>
+</div>
