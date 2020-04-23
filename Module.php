@@ -46,6 +46,11 @@ class Module extends AbstractModule
             $this,
             'addUserNameField'
         ]);
+        
+        $sharedEventManager->attach('Omeka\Controller\Admin\User', 'view.show.after', [
+            $this,
+            'addUserDetail'
+        ]);
     }
 
 
@@ -244,6 +249,25 @@ class Module extends AbstractModule
             $validationException = new ValidationException();
             $validationException->setErrorStore($errorStore);
             throw $validationException;
+        }
+    }
+    
+    public function addUserDetail(EventInterface $event)
+    {
+        /** @var PhpRenderer $phpRenderer */
+        $phpRenderer = $event->getTarget();
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+
+        $resource = $event->getTarget()->vars()->user;
+        $userId = $resource->id();
+
+        $searchResponse = $api->search('usernames', [
+            'id' => $userId
+        ]);
+        if (! empty($userName = $searchResponse->getContent())) {
+            echo $phpRenderer->partial('common/admin/username', [
+                'username' => $userName[0]->userName()
+            ]);
         }
     }
 }

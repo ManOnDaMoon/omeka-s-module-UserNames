@@ -1,0 +1,10 @@
+<?php
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+?>
+<div class="property">
+    <h4><?php echo $translate('User name'); ?></h4>
+    <div class="value">
+        <?php echo $escape($username); ?>
+    </div>
+</div>
