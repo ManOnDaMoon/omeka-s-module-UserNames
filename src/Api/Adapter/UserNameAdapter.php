@@ -8,6 +8,7 @@ use Omeka\Stdlib\ErrorStore;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
 use UserNames\Api\Representation\UserNameRepresentation;
 use UserNames\Entity\UserNames;
+use Omeka\Stdlib\Message;
 
 class UserNameAdapter extends AbstractEntityAdapter
 {
@@ -55,6 +56,15 @@ class UserNameAdapter extends AbstractEntityAdapter
 
     public function validateEntity(EntityInterface $entity, ErrorStore $errorStore)
     {
+        $userName = $entity->getUserName();
+        
+        if (!$this->isUnique($entity, ['userName' => $userName])) {
+            $errorStore->addError('o-module-usernames:username', new Message(
+                'The user name %s is already taken.', // @translate
+                $userName
+                ));
+        }
+
         if (false == $entity->getUserName()) {
             $errorStore->addError('o-module-usernames:username', 'The user name cannot be empty.'); // @translate
         }

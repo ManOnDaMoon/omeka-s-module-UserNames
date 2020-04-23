@@ -8,6 +8,7 @@ use Zend\View\Renderer\PhpRenderer;
 use Zend\ServiceManager\ServiceLocatorInterface;
 use Zend\EventManager\SharedEventManagerInterface;
 use Zend\EventManager\EventInterface;
+use Omeka\Permissions\Acl;
 
 class Module extends AbstractModule
 {
@@ -198,7 +199,7 @@ class Module extends AbstractModule
         $request = $event->getParam('request');
         $operation = $request->getOperation();
 
-        if ($operation == 'update' || $operation == 'create'){
+        if (in_array($operation, ['update', 'create'])){
             $response = $event->getParam('response');
             $data = $response->getContent();
 
@@ -212,7 +213,7 @@ class Module extends AbstractModule
                 //create
                 $response = $api->create('usernames', $userName);
             } else {
-                //update
+                // update
                 $response = $api->update('usernames', $userName['id'], $userName);
             }
         }
