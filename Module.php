@@ -9,6 +9,9 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 use Zend\EventManager\SharedEventManagerInterface;
 use Zend\EventManager\EventInterface;
 use Omeka\Permissions\Acl;
+use Omeka\Api\Exception\ValidationException;
+use Omeka\Stdlib\ErrorStore;
+use Omeka\Stdlib\Message;
 
 class Module extends AbstractModule
 {
@@ -19,6 +22,11 @@ class Module extends AbstractModule
     public function attachListeners (
             SharedEventManagerInterface $sharedEventManager)
     {
+        $sharedEventManager->attach('Omeka\Api\Adapter\UserAdapter', 'api.create.pre', [
+            $this,
+            'checkUserName'
+        ]);
+        
         $sharedEventManager->attach('Omeka\Api\Adapter\UserAdapter', 'api.create.post', [
             $this,
             'handleUserName'
@@ -197,25 +205,45 @@ class Module extends AbstractModule
     public function handleUserName(EventInterface $event)
     {
         $request = $event->getParam('request');
-        $operation = $request->getOperation();
+        $response = $event->getParam('response');
+        $data = $response->getContent();
 
-        if (in_array($operation, ['update', 'create'])){
-            $response = $event->getParam('response');
-            $data = $response->getContent();
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
 
-            $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        $userName['id'] = $data->getId();
+        $userName['o-module-usernames:username'] = $request->getContent()['o-module-usernames:username'];
 
-            $userName['id'] = $data->getId();
-            $userName['o-module-usernames:username'] = $request->getContent()['o-module-usernames:username'];
-
-            $searchResponse = $api->search('usernames', ['id' => $userName['id']]);
-            if (empty($searchResponse->getContent())) {
-                //create
-                $response = $api->create('usernames', $userName);
-            } else {
-                // update
-                $response = $api->update('usernames', $userName['id'], $userName);
-            }
+        $searchResponse = $api->search('usernames', ['id' => $userName['id']]);
+        if (empty($searchResponse->getContent())) {
+            //create
+            $response = $api->create('usernames', $userName);
+        } else {
+            // update
+            $response = $api->update('usernames', $userName['id'], $userName);
+        }
+    }
+    
+    public function checkUserName(EventInterface $event)
+    {
+        /** @var \Omeka\Api\Adapter\UserAdapter $userAdapter */
+        $userAdapter = $event->getTarget();
+        $request = $event->getParam('request');
+        
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        
+        $userName['o-module-usernames:username'] = $request->getContent()['o-module-usernames:username'];
+        
+        $searchResponse = $api->search('usernames', ['userName' => $userName['o-module-usernames:username']]);
+        if (!empty($searchResponse->getContent())) {
+            // Username exists. Warn.
+            $errorStore = new ErrorStore();
+            $errorStore->addError('o-module-usernames:username', new Message(
+                'The user name %s is already taken.', // @translate
+                $userName['o-module-usernames:username']
+                ));
+            $validationException = new ValidationException();
+            $validationException->setErrorStore($errorStore);
+            throw $validationException;
         }
     }
 }
