@@ -42,11 +42,20 @@ msgstr "L'identifiant utilisateur ne peut pas être vide."
 #: Module.php:267 src/Api/Adapter/UserNameAdapter.php:79
 #, php-format
 msgid "User name must be between %1$s and %2$s characters."
-msgstr "L'identifiant utilisateur doit contenir entre %1$q et %2$s caractères."
+msgstr "L'identifiant utilisateur doit contenir entre %1$s et %2$s caractères."
 
 #: Module.php:276 src/Api/Adapter/UserNameAdapter.php:87
 #, php-format
 msgid ""
 "Whitespace is not allowed. Only these special characters may be used: %s"
-msgstr "Les espaces ne sont pas autorisés dans l'identifiant utilisateur. "
-"Utilisez uniquement les caractères spéciaux suivants : %s"
+msgstr ""
+"Les espaces ne sont pas autorisés dans l'identifiant utilisateur. Utilisez "
+"uniquement les caractères spéciaux suivants : %s"
+
+#: src/Form/ConfigForm.php:20
+msgid "User name minimum length"
+msgstr "Longueur minimum des identifiants utilisateur"
+
+#: src/Form/ConfigForm.php:34
+msgid "User name maximum length"
+msgstr "Longueur maximum des identifiants utilisateurs"
