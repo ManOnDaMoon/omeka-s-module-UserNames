@@ -14,12 +14,14 @@ use Omeka\Stdlib\ErrorStore;
 use Omeka\Stdlib\Message;
 use UserNames\Entity\UserNames;
 use Zend\Validator\Regex;
+use UserNames\Form\ConfigForm;
+use Omeka\Settings\Settings;
 
 class Module extends AbstractModule
 {
-    // TODO: make the following constraints configurable
-    const USERNAME_MIN_LENGTH = 1;
-    const USERNAME_MAX_LENGTH = 30;
+    const DEFAULT_USER_MIN_LENGTH = 1;
+    const DEFAULT_USER_MAX_LENGTH = 30;
+    const MAX_SQL_USERNAME_LENGTH = 190;
 
     /**
      * Attach to Zend and Omeka specific listeners
@@ -41,6 +43,8 @@ class Module extends AbstractModule
             $this,
             'handleUserName'
         ]);
+
+        //TODO : Handle user deletion
 
         $sharedEventManager->attach('Omeka\Api\Representation\UserRepresentation', 'rep.resource.json', [
             $this,
@@ -87,32 +91,10 @@ class Module extends AbstractModule
     {
         $connectionService = $serviceLocator->get('Omeka\Connection');
         $connectionService->exec('CREATE TABLE user_names (id INT NOT NULL, user_name VARCHAR(190) NOT NULL, UNIQUE INDEX UNIQ_10F1B21824A232CF (user_name), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;');
-    }
 
-    /**
-     * Upgrade this module.
-     *
-     * @param string $oldVersion
-     * @param string $newVersion
-     * @param ServiceLocatorInterface $serviceLocator
-     */
-    public function upgrade($oldVersion, $newVersion, ServiceLocatorInterface $serviceLocator)
-    {
-//         $api = $serviceLocator->get('Omeka\ApiManager');
-//         $sites = $api->search('sites', [])->getContent();
-//         /** @var \Omeka\Settings\SiteSettings $siteSettings */
-//         $siteSettings = $serviceLocator->get('Omeka\Settings\Site');
-
-//         // v0.10 renamed site setting ID from 'restricted' to 'restrictedsites_restricted'
-//         if (Comparator::lessThan($oldVersion, '0.10')) {
-//             foreach ($sites as $site) {
-//                 $siteSettings->setTargetId($site->id());
-//                 if ($oldSetting = $siteSettings->get('restricted', null)) {
-//                     $siteSettings->set('restrictedsites_restricted', $oldSetting);
-//                     $siteSettings->delete('restricted');
-//                 }
-//             }
-//         }
+        $globalSettings = $serviceLocator->get('Omeka\Settings');
+        $globalSettings->set('usernames_min_length', self::DEFAULT_USER_MIN_LENGTH);
+        $globalSettings->set('usernames_max_length', self::DEFAULT_USER_MAX_LENGTH);
     }
 
     public function uninstall(ServiceLocatorInterface $serviceLocator)
@@ -120,17 +102,11 @@ class Module extends AbstractModule
         $connection = $serviceLocator->get('Omeka\Connection');
 
         $connection->exec('DROP TABLE `user_names`');
-//         $settings = $serviceLocator->get('Omeka\Settings');
-//         $settings->delete('restrictedsites_custom_email');
 
-//         $api = $serviceLocator->get('Omeka\ApiManager');
-//         $sites = $api->search('sites', [])->getContent();
-//         $siteSettings = $serviceLocator->get('Omeka\Settings\Site');
-
-//         foreach ($sites as $site) {
-//             $siteSettings->setTargetId($site->id());
-//             $siteSettings->delete('restrictedsites_restricted');
-//         }
+        /** @var Settings $globalSettings */
+        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
+        $globalSettings->delete('usernames_min_length');
+        $globalSettings->delete('usernames_max_length');
     }
 
     /**
@@ -141,9 +117,9 @@ class Module extends AbstractModule
      */
     public function getConfigForm(PhpRenderer $renderer)
     {
-//         $formElementManager = $this->getServiceLocator()->get('FormElementManager');
-//         $form = $formElementManager->get(ConfigForm::class, []);
-//         return $renderer->formCollection($form, false);
+        $formElementManager = $this->getServiceLocator()->get('FormElementManager');
+        $form = $formElementManager->get(ConfigForm::class, []);
+        return $renderer->formCollection($form, false);
     }
 
     /**
@@ -154,13 +130,24 @@ class Module extends AbstractModule
      */
     public function handleConfigForm(AbstractController $controller)
     {
-//         $params = $controller->params()->fromPost();
-//         if (isset($params['restrictedsites_custom_email'])) {
-//             $customEmailSetting = $params['restrictedsites_custom_email'];
-//         }
+        $params = $controller->params()->fromPost();
+        if (isset($params['usernames_min_length'])) {
+            $userNamesMinLength = $params['usernames_min_length'];
+        }
+        if (isset($params['usernames_max_length'])) {
+            $userNamesMaxLength = $params['usernames_max_length'];
+        }
 
-//         $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
-//         $globalSettings->set('restrictedsites_custom_email', $customEmailSetting);
+        if ($userNamesMaxLength < $userNamesMinLength ||
+            $userNamesMinLength < 1 ||
+            $userNamesMaxLength > self::MAX_SQL_USERNAME_LENGTH) {
+            // TODO: Explicit error
+            return false;
+        }
+
+        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
+        $globalSettings->set('usernames_min_length', $userNamesMinLength);
+        $globalSettings->set('usernames_max_length', $userNamesMaxLength);
     }
 
     /**
@@ -249,7 +236,8 @@ class Module extends AbstractModule
 
     public function validateUserName(EventInterface $event)
     {
-        //FIXME : Need to run the whole validation procedure in order to keep Omeka S from creating the user without its username
+        // TODO : Most of this code duplicates UserNameAdapter::validateEntity(). Needs refactoring.
+        // FIXME : Aggregate all errors in a unique errorStore, then throw error.
         $request = $event->getParam('request');
         $userNameProperty = 'o-module-usernames:username';
         $userName = $request->getContent()[$userNameProperty];
@@ -262,10 +250,14 @@ class Module extends AbstractModule
         }
 
         // Username length
-        if (strlen($userName) < self::USERNAME_MIN_LENGTH || strlen($userName) > self::USERNAME_MAX_LENGTH) {
+        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
+        $userNamesMinLength = $globalSettings->get('usernames_min_length');
+        $userNamesMaxLength = $globalSettings->get('usernames_max_length');
+        if (strlen($userName) < $userNamesMinLength
+            || strlen($userName) > $userNamesMaxLength) {
             $this->throwValidationException($userNameProperty, new Message(
                 'User name must be between %1$s and %2$s characters.', // @translate
-                self::USERNAME_MIN_LENGTH, self::USERNAME_MAX_LENGTH
+                $userNamesMinLength, $userNamesMaxLength
                 ));
         }
 

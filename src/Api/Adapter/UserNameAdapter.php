@@ -67,17 +67,13 @@ class UserNameAdapter extends AbstractEntityAdapter
             $errorStore->addError('o-module-usernames:username', 'The user name cannot be empty.'); // @translate
         }
 
-        if (!$this->isUnique($entity, ['userName' => $userName])) {
-            $errorStore->addError('o-module-usernames:username', new Message(
-                'The user name %s is already taken.', // @translate
-                $userName
-                ));
-        }
-
-        if (strlen($userName) < self::USERNAME_MIN_LENGTH || strlen($userName) > self::USERNAME_MAX_LENGTH) {
+        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
+        $userNamesMinLength = $globalSettings->get('usernames_min_length');
+        $userNamesMaxLength = $globalSettings->get('usernames_max_length');
+        if (strlen($userName) < $userNamesMinLength || strlen($userName) > $userNamesMaxLength) {
             $errorStore->addError('o-module-usernames:username', new Message(
                 'User name must be between %1$s and %2$s characters.', // @translate
-                self::USERNAME_MIN_LENGTH, self::USERNAME_MAX_LENGTH
+                $userNamesMinLength, $userNamesMaxLength
                 ));
         }
 
@@ -89,6 +85,11 @@ class UserNameAdapter extends AbstractEntityAdapter
                 ));
         }
 
-
+        if (!$this->isUnique($entity, ['userName' => $userName])) {
+            $errorStore->addError('o-module-usernames:username', new Message(
+                'The user name %s is already taken.', // @translate
+                $userName
+                ));
+        }
     }
 }
