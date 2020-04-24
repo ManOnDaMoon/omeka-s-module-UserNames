@@ -23,6 +23,8 @@ class Module extends AbstractModule
     const DEFAULT_USER_MAX_LENGTH = 30;
     const MAX_SQL_USERNAME_LENGTH = 190;
 
+    protected $errorStore;
+
     /**
      * Attach to Zend and Omeka specific listeners
      */
@@ -133,16 +135,30 @@ class Module extends AbstractModule
         $params = $controller->params()->fromPost();
         if (isset($params['usernames_min_length'])) {
             $userNamesMinLength = $params['usernames_min_length'];
+        } else {
+            $this->addError('usernames_min_length', new Message(
+                'Minimum length cannot be empty.' // @translate
+                ));
         }
+
         if (isset($params['usernames_max_length'])) {
             $userNamesMaxLength = $params['usernames_max_length'];
+        } else {
+            $this->addError('usernames_max_length', new Message(
+                'Maximum length cannot be empty.' // @translate
+                ));
         }
 
         if ($userNamesMaxLength < $userNamesMinLength ||
             $userNamesMinLength < 1 ||
             $userNamesMaxLength > self::MAX_SQL_USERNAME_LENGTH) {
-            // TODO: Explicit error
-            return false;
+                $this->addError('usernames_max_length', new Message(
+                    'Max and min length out of bounds. Maximum length cannot be over 190.' // @translate
+                    ));
+        }
+
+        if ($this->errorStore->hasErrors()) {
+            return false; // Omeka S does not provide a way to explicit error here yet.
         }
 
         $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
@@ -225,13 +241,21 @@ class Module extends AbstractModule
         }
     }
 
-    public function throwValidationException($property, Message $message)
+    public function addError($property, Message $message)
     {
-        $errorStore = new ErrorStore();
-        $errorStore->addError($property, $message);
-        $validationException = new ValidationException();
-        $validationException->setErrorStore($errorStore);
-        throw $validationException;
+        if (!$this->errorStore) {
+            $this->errorStore = new ErrorStore();
+        }
+        $this->errorStore->addError($property, $message);
+    }
+
+    public function throwValidationExceptionIfErrors()
+    {
+        if ($this->errorStore && $this->errorStore->hasErrors()) {
+            $validationException = new ValidationException();
+            $validationException->setErrorStore($this->errorStore);
+            throw $validationException;
+        }
     }
 
     public function validateUserName(EventInterface $event)
@@ -244,7 +268,7 @@ class Module extends AbstractModule
 
         // Empty username
         if (!$userName) {
-            $this->throwValidationException($userNameProperty, new Message(
+            $this->addError($userNameProperty, new Message(
                 'The user name cannot be empty.' // @translate
                 ));
         }
@@ -255,7 +279,7 @@ class Module extends AbstractModule
         $userNamesMaxLength = $globalSettings->get('usernames_max_length');
         if (strlen($userName) < $userNamesMinLength
             || strlen($userName) > $userNamesMaxLength) {
-            $this->throwValidationException($userNameProperty, new Message(
+            $this->addError($userNameProperty, new Message(
                 'User name must be between %1$s and %2$s characters.', // @translate
                 $userNamesMinLength, $userNamesMaxLength
                 ));
@@ -264,7 +288,7 @@ class Module extends AbstractModule
         // Invalid username
         $validator = new Regex('#^[a-zA-Z0-9.*@+!\-_%\#\^&$]*$#u');
         if (!$validator->isValid($userName)) {
-            $this->throwValidationException($userNameProperty, new Message(
+            $this->addError($userNameProperty, new Message(
                 'Whitespace is not allowed. Only these special characters may be used: %s', // @translate
                 ' + ! @ # $ % ^ & * . - _'
                 ));
@@ -275,11 +299,13 @@ class Module extends AbstractModule
         $searchResponse = $api->search('usernames', ['userName' => $userName]);
         if (!empty($searchResponse->getContent())) {
             // Username exists. Warn.
-            $this->throwValidationException($userNameProperty, new Message(
+            $this->addError($userNameProperty, new Message(
                 'The user name %s is already taken.', // @translate
                 $userName
                 ));
         }
+
+        $this->throwValidationExceptionIfErrors();
     }
 
     public function renderUserName($userId, PhpRenderer $phpRenderer, $partial)

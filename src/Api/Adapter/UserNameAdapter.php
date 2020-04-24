@@ -13,10 +13,6 @@ use Zend\Validator\Regex;
 
 class UserNameAdapter extends AbstractEntityAdapter
 {
-    // TODO: make the following constraints configurable
-    const USERNAME_MIN_LENGTH = 1;
-    const USERNAME_MAX_LENGTH = 30;
-
     public function getResourceName()
     {
         return 'usernames';

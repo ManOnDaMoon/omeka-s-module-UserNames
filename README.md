@@ -32,7 +32,15 @@ Login forms are modified to accept other identification methods than the origina
 
 ## Module configuration
 
-There is no configuration at the moment.
+### User name minimum and maximum length
+
+User names length can be configured in the module configuration panel.
+Navigate to your Omeka s installation Modules panel, and clock Configure next to the UserNames module.
+
+Default configuration is between 1 and 30 characters.
+
+Minimum length cannot be set below 1, and maximum length cannot be set above 190 characters.
+
 
 ## Known issues
 
