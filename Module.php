@@ -76,6 +76,12 @@ class Module extends AbstractModule
             $this,
             'userViewDetails',
         ]);
+
+        // Attach to RestrictedSites module form event
+        $sharedEventManager->attach('RestrictedSites\Form\SiteLoginForm', 'form.add_elements', [
+            $this,
+            'modifySiteLoginForm',
+        ]);
     }
 
     /**
@@ -388,5 +394,23 @@ class Module extends AbstractModule
     {
         $userId = $event->getTarget()->vars()->resource->id();
         $this->renderUserName($userId, $event->getTarget(), 'common/admin/username-detail');
+    }
+
+    public function modifySiteLoginForm(EventInterface $event)
+    {
+        /** @var \RestrictedSites\Form\SiteLoginForm $form */
+        $form = $event->getTarget();
+
+        $form->add([
+            'name' => 'email',
+            'type' => 'text',
+            'options' => [
+                'label' => 'User name or email', // @translate
+            ],
+            'attributes' => [
+                'required' => true,
+                'id' => 'email',
+            ],
+        ], [ 'priority' => 1]);
     }
 }
