@@ -31,11 +31,13 @@ class Module extends AbstractModule
     public function attachListeners (
             SharedEventManagerInterface $sharedEventManager)
     {
+        // Validate username constraints before user creation
         $sharedEventManager->attach('Omeka\Api\Adapter\UserAdapter', 'api.create.pre', [
             $this,
             'validateUserName'
         ]);
 
+        // Handle username creation, update and deletion
         $sharedEventManager->attach('Omeka\Api\Adapter\UserAdapter', 'api.create.post', [
             $this,
             'handleUserName'
@@ -51,21 +53,26 @@ class Module extends AbstractModule
             'handleUserName'
         ]);
 
+        // Populate user representation with username especially for user add/edit forms
         $sharedEventManager->attach('Omeka\Api\Representation\UserRepresentation', 'rep.resource.json', [
             $this,
             'populateUserName'
         ]);
 
+        // Add username field to user add/edit form
         $sharedEventManager->attach('Omeka\Form\UserForm', 'form.add_elements', [
             $this,
             'addUserNameField'
         ]);
 
+        // Show username on admin user view
         $sharedEventManager->attach('Omeka\Controller\Admin\User', 'view.show.after', [
             $this,
             'userViewShowAfter'
         ]);
 
+        // Show username on admin user details view
+        // TODO: add username to user table? Not sure if easy.
         $sharedEventManager->attach('Omeka\Controller\Admin\User', 'view.details', [
             $this,
             'userViewDetails'
@@ -179,8 +186,6 @@ class Module extends AbstractModule
      */
     public function onBootstrap (MvcEvent $event)
     {
-        //TODO : Fix authorizations for other users than admin e.g. editor cannot edit its own username currently
-
         parent::onBootstrap($event);
 
         /** @var Acl $acl */
@@ -188,6 +193,50 @@ class Module extends AbstractModule
         $acl->allow(null, [
             'UserNames\Controller\Login'
         ], null);
+
+
+        // Add autorizations to UserNameAdapter for all roles
+        $acl->allow(
+            'editor',
+            'UserNames\Api\Adapter\UserNameAdapter',
+            ['read', 'update', 'search']
+            );
+        $acl->allow(
+            'reviewer',
+            'UserNames\Api\Adapter\UserNameAdapter',
+            ['read', 'update', 'search']
+            );
+        $acl->allow(
+            'researcher',
+            'UserNames\Api\Adapter\UserNameAdapter',
+            ['read', 'update', 'search']
+            );
+        $acl->allow(
+            'author',
+            'UserNames\Api\Adapter\UserNameAdapter',
+            ['read', 'update', 'search']
+            );
+
+        $acl->allow(
+            'editor',
+            'UserNames\Entity\UserNames',
+            ['read', 'update', 'search']
+            );
+        $acl->allow(
+            'reviewer',
+            'UserNames\Entity\UserNames',
+            ['read', 'update', 'search']
+            );
+        $acl->allow(
+            'researcher',
+            'UserNames\Entity\UserNames',
+            ['read', 'update', 'search']
+            );
+        $acl->allow(
+            'author',
+            'UserNames\Entity\UserNames',
+            ['read', 'update', 'search']
+            );
     }
 
     public function addUserNameField(EventInterface $event)
@@ -276,7 +325,6 @@ class Module extends AbstractModule
     public function validateUserName(EventInterface $event)
     {
         // TODO : Most of this code duplicates UserNameAdapter::validateEntity(). Needs refactoring.
-        // FIXME : Aggregate all errors in a unique errorStore, then throw error.
         $request = $event->getParam('request');
         $userNameProperty = 'o-module-usernames:username';
         $userName = $request->getContent()[$userNameProperty];
