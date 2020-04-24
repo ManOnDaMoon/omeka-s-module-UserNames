@@ -46,7 +46,10 @@ class Module extends AbstractModule
             'handleUserName'
         ]);
 
-        //TODO : Handle user deletion
+        $sharedEventManager->attach('Omeka\Api\Adapter\UserAdapter', 'api.delete.post', [
+            $this,
+            'handleUserName'
+        ]);
 
         $sharedEventManager->attach('Omeka\Api\Representation\UserRepresentation', 'rep.resource.json', [
             $this,
@@ -223,21 +226,33 @@ class Module extends AbstractModule
     public function handleUserName(EventInterface $event)
     {
         $request = $event->getParam('request');
-        $response = $event->getParam('response');
-        $data = $response->getContent();
-
+        $operation = $request->getOperation();
+        /** @var \Omeka\Api\Manager $api */
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
 
-        $userName['id'] = $data->getId();
-        $userName['o-module-usernames:username'] = $request->getContent()['o-module-usernames:username'];
+        if ($operation == 'update' || $operation == 'create'){
+            $response = $event->getParam('response');
+            $data = $response->getContent();
 
-        $searchResponse = $api->search('usernames', ['id' => $userName['id']]);
-        if (empty($searchResponse->getContent())) {
-            //create
-            $response = $api->create('usernames', $userName);
-        } else {
-            // update
-            $response = $api->update('usernames', $userName['id'], $userName);
+            $userName['id'] = $data->getId();
+            $userName['o-module-usernames:username'] = $request->getContent()['o-module-usernames:username'];
+
+            $searchResponse = $api->search('usernames', ['id' => $userName['id']]);
+            if (empty($searchResponse->getContent())) {
+                //create
+                $response = $api->create('usernames', $userName);
+            } else {
+                // update
+                $response = $api->update('usernames', $userName['id'], $userName);
+            }
+        }
+        else if ($operation == 'delete') {
+            $userId = $request->getId();
+            $searchResponse = $api->search('usernames', ['id' => $userId]);
+            if (!empty($searchResponse->getContent())) {
+                // delete
+                $response = $api->delete('usernames', $userId);
+            }
         }
     }
 
