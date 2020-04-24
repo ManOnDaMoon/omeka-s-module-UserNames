@@ -31,12 +31,12 @@ class UserNameAdapter extends AbstractEntityAdapter
     public function hydrate(Request $request, EntityInterface $entity,
         ErrorStore $errorStore
         ) {
-            if ($this->shouldHydrate($request, 'id')) {
-                $entity->setId($request->getValue('id'));
-            }
-            if ($this->shouldHydrate($request, 'o-module-usernames:username')) {
-                $entity->setUserName($request->getValue('o-module-usernames:username'));
-            }
+        if ($this->shouldHydrate($request, 'id')) {
+            $entity->setId($request->getValue('id'));
+        }
+        if ($this->shouldHydrate($request, 'o-module-usernames:username')) {
+            $entity->setUserName($request->getValue('o-module-usernames:username'));
+        }
     }
 
     public function buildQuery(QueryBuilder $qb, array $query)

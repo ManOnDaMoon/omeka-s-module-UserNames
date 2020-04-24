@@ -15,7 +15,6 @@ class PasswordAdapter extends AbstractAdapter
      */
     protected $repository;
 
-
     protected $userNameRepository;
 
     /**

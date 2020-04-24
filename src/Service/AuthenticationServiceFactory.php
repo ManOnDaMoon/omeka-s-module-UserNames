@@ -12,7 +12,8 @@ use Zend\ServiceManager\Factory\FactoryInterface;
 use Interop\Container\ContainerInterface;
 
 /**
- * Authentication service factory.
+ * UserNames : Authentication service factory replaces core Omeka S class
+ * to invoke the proper PasswordAdapter when needed.
  */
 class AuthenticationServiceFactory implements FactoryInterface
 {

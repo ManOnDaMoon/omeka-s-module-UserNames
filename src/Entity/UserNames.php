@@ -8,7 +8,6 @@ use Omeka\Entity\AbstractEntity;
  */
 class UserNames extends AbstractEntity
 {
-
     /**
      * @Id
      * @Column(type="integer")

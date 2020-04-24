@@ -12,7 +12,6 @@ use Omeka\Permissions\Acl;
 use Omeka\Api\Exception\ValidationException;
 use Omeka\Stdlib\ErrorStore;
 use Omeka\Stdlib\Message;
-use UserNames\Entity\UserNames;
 use Zend\Validator\Regex;
 use UserNames\Form\ConfigForm;
 use Omeka\Settings\Settings;
@@ -28,58 +27,56 @@ class Module extends AbstractModule
     /**
      * Attach to Zend and Omeka specific listeners
      */
-    public function attachListeners (
+    public function attachListeners(
             SharedEventManagerInterface $sharedEventManager)
     {
         // Validate username constraints before user creation
         $sharedEventManager->attach('Omeka\Api\Adapter\UserAdapter', 'api.create.pre', [
             $this,
-            'validateUserName'
+            'validateUserName',
         ]);
 
         // Handle username creation, update and deletion
         $sharedEventManager->attach('Omeka\Api\Adapter\UserAdapter', 'api.create.post', [
             $this,
-            'handleUserName'
+            'handleUserName',
         ]);
 
         $sharedEventManager->attach('Omeka\Api\Adapter\UserAdapter', 'api.update.post', [
             $this,
-            'handleUserName'
+            'handleUserName',
         ]);
 
         $sharedEventManager->attach('Omeka\Api\Adapter\UserAdapter', 'api.delete.post', [
             $this,
-            'handleUserName'
+            'handleUserName',
         ]);
 
         // Populate user representation with username especially for user add/edit forms
         $sharedEventManager->attach('Omeka\Api\Representation\UserRepresentation', 'rep.resource.json', [
             $this,
-            'populateUserName'
+            'populateUserName',
         ]);
 
         // Add username field to user add/edit form
         $sharedEventManager->attach('Omeka\Form\UserForm', 'form.add_elements', [
             $this,
-            'addUserNameField'
+            'addUserNameField',
         ]);
 
         // Show username on admin user view
         $sharedEventManager->attach('Omeka\Controller\Admin\User', 'view.show.after', [
             $this,
-            'userViewShowAfter'
+            'userViewShowAfter',
         ]);
 
         // Show username on admin user details view
         // TODO: add username to user table? Not sure if easy.
         $sharedEventManager->attach('Omeka\Controller\Admin\User', 'view.details', [
             $this,
-            'userViewDetails'
+            'userViewDetails',
         ]);
     }
-
-
 
     /**
      * Include the configuration array containing the sitelogin controller, the
@@ -89,7 +86,7 @@ class Module extends AbstractModule
      *
      * @see \Omeka\Module\AbstractModule::getConfig()
      */
-    public function getConfig ()
+    public function getConfig()
     {
         return include __DIR__ . '/config/module.config.php';
     }
@@ -162,7 +159,7 @@ class Module extends AbstractModule
         if ($userNamesMaxLength < $userNamesMinLength ||
             $userNamesMinLength < 1 ||
             $userNamesMaxLength > self::MAX_SQL_USERNAME_LENGTH) {
-                $this->addError('usernames_max_length', new Message(
+            $this->addError('usernames_max_length', new Message(
                     'Max and min length out of bounds. Maximum length cannot be over 190.' // @translate
                     ));
         }
@@ -184,16 +181,15 @@ class Module extends AbstractModule
      *
      * @see \Omeka\Module\AbstractModule::onBootstrap()
      */
-    public function onBootstrap (MvcEvent $event)
+    public function onBootstrap(MvcEvent $event)
     {
         parent::onBootstrap($event);
 
         /** @var Acl $acl */
         $acl = $this->getServiceLocator()->get('Omeka\Acl');
         $acl->allow(null, [
-            'UserNames\Controller\Login'
+            'UserNames\Controller\Login',
         ], null);
-
 
         // Add autorizations to UserNameAdapter for all roles
         $acl->allow(
@@ -279,7 +275,7 @@ class Module extends AbstractModule
         /** @var \Omeka\Api\Manager $api */
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
 
-        if ($operation == 'update' || $operation == 'create'){
+        if ($operation == 'update' || $operation == 'create') {
             $response = $event->getParam('response');
             $data = $response->getContent();
 
@@ -294,8 +290,7 @@ class Module extends AbstractModule
                 // update
                 $response = $api->update('usernames', $userName['id'], $userName);
             }
-        }
-        else if ($operation == 'delete') {
+        } elseif ($operation == 'delete') {
             $userId = $request->getId();
             $searchResponse = $api->search('usernames', ['id' => $userId]);
             if (!empty($searchResponse->getContent())) {
@@ -375,11 +370,11 @@ class Module extends AbstractModule
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $searchResponse = $api->search('usernames', [
-            'id' => $userId
+            'id' => $userId,
         ]);
         if (! empty($userName = $searchResponse->getContent())) {
             echo $phpRenderer->partial($partial, [
-                'username' => $userName[0]->userName()
+                'username' => $userName[0]->userName(),
             ]);
         }
     }

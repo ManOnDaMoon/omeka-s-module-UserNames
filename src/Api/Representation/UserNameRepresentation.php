@@ -29,7 +29,6 @@ class UserNameRepresentation extends AbstractEntityRepresentation
         return $this->resource->getUserName();
     }
 
-
     public function getEntity()
     {
         return $this->resource;

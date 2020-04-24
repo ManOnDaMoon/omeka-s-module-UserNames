@@ -10,6 +10,7 @@ return [
     ],
     'service_manager' => [
         'factories' => [
+            // Overriding Core
             'Omeka\AuthenticationService' => UserNames\Service\AuthenticationServiceFactory::class
         ]
     ],
@@ -26,6 +27,7 @@ return [
                     'regex' => '/login(/.*)?',
                     'spec' => '/login',
                     'defaults' => [
+                        // Overriding Core
                         'controller' => 'UserNames\Controller\Login',
                         'action' => 'login',
                     ],
