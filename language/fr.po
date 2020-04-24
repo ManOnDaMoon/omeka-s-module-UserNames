@@ -59,3 +59,16 @@ msgstr "Longueur minimum des identifiants utilisateur"
 #: src/Form/ConfigForm.php:34
 msgid "User name maximum length"
 msgstr "Longueur maximum des identifiants utilisateurs"
+
+#: Module.php:140
+msgid "Minimum length cannot be empty."
+msgstr "La taille minimum ne peut pas être vide"
+
+#: Module.php:148
+msgid "Maximum length cannot be empty."
+msgstr "La taille maximum ne peut pas être vide"
+
+#: Module.php:156
+msgid "Max and min length out of bounds. Maximum length cannot be over 190."
+msgstr "Taille minimum et/ou maximum hors limite. La taille maximum ne peut "
+"pas dépasser 190."
