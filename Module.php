@@ -16,7 +16,6 @@ use Zend\Validator\Regex;
 use UserNames\Form\ConfigForm;
 use Omeka\Settings\Settings;
 use Composer\Semver\Comparator;
-use Omeka\Api\Representation\UserRepresentation;
 
 class Module extends AbstractModule
 {
