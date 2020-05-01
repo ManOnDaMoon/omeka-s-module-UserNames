@@ -200,7 +200,7 @@ class Module extends AbstractModule
                     ));
         }
 
-        if ($this->errorStore->hasErrors()) { //FIXME Must check if errorStore exists
+        if ($this->errorStore && $this->errorStore->hasErrors()) {
             return false; // Omeka S does not provide a way to explicit error here yet.
         }
 
