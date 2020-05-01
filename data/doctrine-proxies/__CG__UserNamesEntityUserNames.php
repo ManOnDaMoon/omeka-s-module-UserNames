@@ -66,10 +66,10 @@ class UserNames extends \UserNames\Entity\UserNames implements \Doctrine\ORM\Pro
     public function __sleep()
     {
         if ($this->__isInitialized__) {
-            return ['__isInitialized__', 'id', 'userName'];
+            return ['__isInitialized__', 'id', 'user', 'userName'];
         }
 
-        return ['__isInitialized__', 'id', 'userName'];
+        return ['__isInitialized__', 'id', 'user', 'userName'];
     }
 
     /**
@@ -194,12 +194,56 @@ class UserNames extends \UserNames\Entity\UserNames implements \Doctrine\ORM\Pro
     /**
      * {@inheritDoc}
      */
+    public function setId($id)
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setId', [$id]);
+
+        return parent::setId($id);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getUserId()
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getUserId', []);
+
+        return parent::getUserId();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setUserId($userId)
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setUserId', [$userId]);
+
+        return parent::setUserId($userId);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function getUserName()
     {
 
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'getUserName', []);
 
         return parent::getUserName();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setUserName($userName)
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'setUserName', [$userName]);
+
+        return parent::setUserName($userName);
     }
 
     /**

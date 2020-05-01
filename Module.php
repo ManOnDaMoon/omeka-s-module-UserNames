@@ -15,6 +15,7 @@ use Omeka\Stdlib\Message;
 use Zend\Validator\Regex;
 use UserNames\Form\ConfigForm;
 use Omeka\Settings\Settings;
+use Composer\Semver\Comparator;
 
 class Module extends AbstractModule
 {
@@ -105,11 +106,38 @@ class Module extends AbstractModule
     public function install(ServiceLocatorInterface $serviceLocator)
     {
         $connectionService = $serviceLocator->get('Omeka\Connection');
-        $connectionService->exec('CREATE TABLE user_names (id INT NOT NULL, user_name VARCHAR(190) NOT NULL, UNIQUE INDEX UNIQ_10F1B21824A232CF (user_name), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;');
+        //V0.2
+        //$connectionService->exec('CREATE TABLE user_names (user_id INT NOT NULL, user_name VARCHAR(190) NOT NULL, UNIQUE INDEX UNIQ_10F1B21824A232CF (user_name), PRIMARY KEY(user_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;');
+        //$connectionService->exev('ALTER TABLE user_names ADD CONSTRAINT FK_10F1B218A76ED395 FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE CASCADE;');
+
+        $connectionService->exec('CREATE TABLE user_names (id INT AUTO_INCREMENT NOT NULL, user_id INT DEFAULT NULL, user_name VARCHAR(190) NOT NULL, UNIQUE INDEX UNIQ_10F1B21824A232CF (user_name), UNIQUE INDEX UNIQ_10F1B218A76ED395 (user_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;');
+        $connectionService->exec('ALTER TABLE user_names ADD CONSTRAINT FK_10F1B218A76ED395 FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE CASCADE;');
+
 
         $globalSettings = $serviceLocator->get('Omeka\Settings');
         $globalSettings->set('usernames_min_length', self::DEFAULT_USER_MIN_LENGTH);
         $globalSettings->set('usernames_max_length', self::DEFAULT_USER_MAX_LENGTH);
+    }
+
+
+    /**
+     * Upgrade this module.
+     *
+     * @param string $oldVersion
+     * @param string $newVersion
+     * @param ServiceLocatorInterface $serviceLocator
+     */
+    public function upgrade($oldVersion, $newVersion, ServiceLocatorInterface $serviceLocator)
+    {
+        $connectionService = $serviceLocator->get('Omeka\Connection');
+
+        if (Comparator::lessThan($oldVersion, '0.2')) {
+            //V0.2
+            // Rename id column to user_id.
+            $connectionService->exec('ALTER TABLE user_names CHANGE id user_id INT;');
+            // Additional config
+            $connectionService->exec('ALTER TABLE user_names ADD CONSTRAINT FK_10F1B218A76ED395 FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE CASCADE;');
+        }
     }
 
     public function uninstall(ServiceLocatorInterface $serviceLocator)
@@ -170,7 +198,7 @@ class Module extends AbstractModule
                     ));
         }
 
-        if ($this->errorStore->hasErrors()) {
+        if ($this->errorStore->hasErrors()) { //FIXME Must check if errorStore exists
             return false; // Omeka S does not provide a way to explicit error here yet.
         }
 
@@ -267,7 +295,7 @@ class Module extends AbstractModule
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $jsonLd = $event->getParam('jsonLd');
-        $userNames = $api->search('usernames', ['id' => $jsonLd['o:id']])->getContent();
+        $userNames = $api->search('usernames', ['user_id' => $jsonLd['o:id']])->getContent();
         if (!empty($userNames[0])) {
             $jsonLd['o-module-usernames:username'] = $userNames[0]->userName();
             $event->setParam('jsonLd', $jsonLd);
@@ -285,20 +313,20 @@ class Module extends AbstractModule
             $response = $event->getParam('response');
             $data = $response->getContent();
 
-            $userName['id'] = $data->getId();
+            $userName['user'] = $data->getId();
             $userName['o-module-usernames:username'] = $request->getContent()['o-module-usernames:username'];
 
-            $searchResponse = $api->search('usernames', ['id' => $userName['id']]);
+            $searchResponse = $api->search('usernames', ['user' => $userName['user']]);
             if (empty($searchResponse->getContent())) {
                 //create
                 $response = $api->create('usernames', $userName);
             } else {
                 // update
-                $response = $api->update('usernames', $userName['id'], $userName);
+                $response = $api->update('usernames', $userName['user'], $userName);
             }
         } elseif ($operation == 'delete') {
             $userId = $request->getId();
-            $searchResponse = $api->search('usernames', ['id' => $userId]);
+            $searchResponse = $api->search('usernames', ['user' => $userId]);
             if (!empty($searchResponse->getContent())) {
                 // delete
                 $response = $api->delete('usernames', $userId);
@@ -376,7 +404,7 @@ class Module extends AbstractModule
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $searchResponse = $api->search('usernames', [
-            'id' => $userId,
+            'user' => $userId,
         ]);
         if (! empty($userName = $searchResponse->getContent())) {
             echo $phpRenderer->partial($partial, [

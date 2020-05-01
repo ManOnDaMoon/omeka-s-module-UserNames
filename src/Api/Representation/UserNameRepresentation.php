@@ -19,7 +19,7 @@ class UserNameRepresentation extends AbstractEntityRepresentation
     {
         $entity = $this->resource;
         return [
-            'id' => $entity->getId(),
+            'user_id' => $entity->getId(),
             'o-module-usernames:username' => $entity->getUserName(),
         ];
     }
