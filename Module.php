@@ -135,7 +135,9 @@ class Module extends AbstractModule
             //V0.2
             // Rename id column to user_id.
             $connectionService->exec('ALTER TABLE user_names CHANGE id user_id INT;');
-            // Additional config
+            $connectionService->exec('ALTER TABLE user_names ADD UNIQUE INDEX UNIQ_10F1B218A76ED395 (user_id);');
+            $connectionService->exec('ALTER TABLE user_names DROP PRIMARY KEY;');
+            $connectionService->exec('ALTER TABLE user_names ADD COLUMN id INT PRIMARY KEY AUTO_INCREMENT NOT NULL;');
             $connectionService->exec('ALTER TABLE user_names ADD CONSTRAINT FK_10F1B218A76ED395 FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE CASCADE;');
         }
     }
@@ -295,7 +297,7 @@ class Module extends AbstractModule
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $jsonLd = $event->getParam('jsonLd');
-        $userNames = $api->search('usernames', ['user_id' => $jsonLd['o:id']])->getContent();
+        $userNames = $api->search('usernames', ['user' => $jsonLd['o:id']])->getContent();
         if (!empty($userNames[0])) {
             $jsonLd['o-module-usernames:username'] = $userNames[0]->userName();
             $event->setParam('jsonLd', $jsonLd);
@@ -322,7 +324,7 @@ class Module extends AbstractModule
                 $response = $api->create('usernames', $userName);
             } else {
                 // update
-                $response = $api->update('usernames', $userName['user'], $userName);
+                $response = $api->update('usernames', $searchResponse->getContent()[0]->id(), $userName);
             }
         } elseif ($operation == 'delete') {
             $userId = $request->getId();

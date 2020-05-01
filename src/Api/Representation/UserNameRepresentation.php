@@ -17,11 +17,23 @@ class UserNameRepresentation extends AbstractEntityRepresentation
 
     public function getJsonLd()
     {
+        /** @var \UserNames\Entity\UserNames $entity */
         $entity = $this->resource;
         return [
-            'user_id' => $entity->getId(),
+            'o:user' => $entity->getUserId(),
             'o-module-usernames:username' => $entity->getUserName(),
         ];
+    }
+
+    public function id()
+    {
+        return $this->resource->getId();
+    }
+
+    public function user()
+    {
+        return $this->getAdapter('users')->getRepresentation($this->resource->getUser());
+        //return $this->resource->getUserId();
     }
 
     public function userName()

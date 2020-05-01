@@ -2,6 +2,7 @@
 namespace UserNames\Entity;
 
 use Omeka\Entity\AbstractEntity;
+use Omeka\Entity\User;
 
 /**
  * @Entity
@@ -40,19 +41,14 @@ class UserNames extends AbstractEntity
         return $this->id;
     }
 
-    public function setId($id)
-    {
-        $this->id = $id;
-    }
-
-    public function getUserId()
+    public function getUser()
     {
         return $this->user;
     }
 
-    public function setUserId($userId)
+    public function setUser(User $user = null)
     {
-        $this->user = $userId;
+        $this->user = $user;
     }
 
     public function getUserName()

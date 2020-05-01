@@ -31,9 +31,12 @@ class UserNameAdapter extends AbstractEntityAdapter
     public function hydrate(Request $request, EntityInterface $entity,
         ErrorStore $errorStore
         ) {
-        if ($this->shouldHydrate($request, 'user_id')) {
-            $entity->setId($request->getValue('user_id'));
+        if ($this->shouldHydrate($request, 'user')) {
+            $userAdapter = $this->getAdapter('users');
+            $user = $userAdapter->findEntity($request->getValue('user'));
+            $entity->setUser($user);
         }
+
         if ($this->shouldHydrate($request, 'o-module-usernames:username')) {
             $entity->setUserName($request->getValue('o-module-usernames:username'));
         }
@@ -43,7 +46,7 @@ class UserNameAdapter extends AbstractEntityAdapter
     {
         if (!empty($query['user_id'])) {
             $qb->andWhere($qb->expr()->eq(
-                "omeka_root.id",
+                "omeka_root.user_id",
                 $this->createNamedParameter($qb, $query['user_id']))
                 );
         }
