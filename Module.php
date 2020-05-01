@@ -16,6 +16,7 @@ use Zend\Validator\Regex;
 use UserNames\Form\ConfigForm;
 use Omeka\Settings\Settings;
 use Composer\Semver\Comparator;
+use Omeka\Api\Representation\UserRepresentation;
 
 class Module extends AbstractModule
 {
@@ -292,7 +293,7 @@ class Module extends AbstractModule
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $jsonLd = $event->getParam('jsonLd');
-        $userNames = $api->search('usernames', ['user' => $jsonLd['o:id']])->getContent();
+        $userNames = $api->search('usernames', ['user' => $jsonLd['o:id']], ['limit' => 1])->getContent();//FIXME
         if (!empty($userNames[0])) {
             $jsonLd['o-module-usernames:username'] = $userNames[0]->userName();
             $event->setParam('jsonLd', $jsonLd);
@@ -395,7 +396,7 @@ class Module extends AbstractModule
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $searchResponse = $api->search('usernames', [
             'user' => $userId,
-        ]);
+        ], ['limit' => 1]);
         if (! empty($userName = $searchResponse->getContent())) {
             echo $phpRenderer->partial($partial, [
                 'username' => $userName[0]->userName(),

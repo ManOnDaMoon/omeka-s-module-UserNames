@@ -44,10 +44,10 @@ class UserNameAdapter extends AbstractEntityAdapter
 
     public function buildQuery(QueryBuilder $qb, array $query)
     {
-        if (!empty($query['user_id'])) {
+        if (!empty($query['user'])) {
             $qb->andWhere($qb->expr()->eq(
-                "omeka_root.user_id",
-                $this->createNamedParameter($qb, $query['user_id']))
+                "omeka_root.user",
+                $this->createNamedParameter($qb, $query['user']))
                 );
         }
         if (!empty($query['userName'])) {

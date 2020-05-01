@@ -34,7 +34,7 @@ class PasswordAdapter extends AbstractAdapter
 
         if (!$user) { //Seems to work?
             if ($userName = $this->userNameRepository->findOneBy(['userName' => $this->identity])) {
-                $user = $this->repository->findOneBy(['id' => $userName->getId()]);
+                $user = $this->repository->findOneBy(['id' => $userName->getUser()]);
             }
         }
 
