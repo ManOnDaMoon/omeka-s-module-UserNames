@@ -48,11 +48,6 @@ class Module extends AbstractModule
             'handleUserName',
         ]);
 
-        $sharedEventManager->attach('Omeka\Api\Adapter\UserAdapter', 'api.delete.post', [
-            $this,
-            'handleUserName',
-        ]);
-
         // Populate user representation with username especially for user add/edit forms
         $sharedEventManager->attach('Omeka\Api\Representation\UserRepresentation', 'rep.resource.json', [
             $this,
@@ -325,13 +320,6 @@ class Module extends AbstractModule
             } else {
                 // update
                 $response = $api->update('usernames', $searchResponse->getContent()[0]->id(), $userName);
-            }
-        } elseif ($operation == 'delete') {
-            $userId = $request->getId();
-            $searchResponse = $api->search('usernames', ['user' => $userId]);
-            if (!empty($searchResponse->getContent())) {
-                // delete
-                $response = $api->delete('usernames', $userId);
             }
         }
     }
