@@ -108,12 +108,10 @@ class Module extends AbstractModule
         $connectionService->exec('CREATE TABLE user_names (id INT AUTO_INCREMENT NOT NULL, user_id INT DEFAULT NULL, user_name VARCHAR(190) NOT NULL, UNIQUE INDEX UNIQ_10F1B21824A232CF (user_name), UNIQUE INDEX UNIQ_10F1B218A76ED395 (user_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;');
         $connectionService->exec('ALTER TABLE user_names ADD CONSTRAINT FK_10F1B218A76ED395 FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE CASCADE;');
 
-
         $globalSettings = $serviceLocator->get('Omeka\Settings');
         $globalSettings->set('usernames_min_length', self::DEFAULT_USER_MIN_LENGTH);
         $globalSettings->set('usernames_max_length', self::DEFAULT_USER_MAX_LENGTH);
     }
-
 
     /**
      * Upgrade this module.
