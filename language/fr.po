@@ -33,7 +33,7 @@ msgstr "Identifiant ou e-mail"
 
 #: src/Controller/LoginController.php:40
 msgid "User name, email, or password is invalid"
-msgstr "L'identifiant utilisateur, l'e-mail our le mot de passe est invalide."
+msgstr "L'identifiant utilisateur, l'e-mail ou le mot de passe est invalide."
 
 #: src/Api/Adapter/UserNameAdapter.php:69
 msgid "The user name cannot be empty."
