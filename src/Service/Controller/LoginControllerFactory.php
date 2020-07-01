@@ -3,7 +3,7 @@ namespace UserNames\Service\Controller;
 
 use Interop\Container\ContainerInterface;
 use UserNames\Controller\LoginController;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class LoginControllerFactory implements FactoryInterface
 {

@@ -3,8 +3,8 @@
 namespace UserNames\Controller;
 
 use UserNames\Form\LoginForm;
-use Zend\View\Model\ViewModel;
-use Zend\Session\Container;
+use Laminas\View\Model\ViewModel;
+use Laminas\Session\Container;
 
 class LoginController extends \Omeka\Controller\LoginController
 {

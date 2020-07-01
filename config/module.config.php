@@ -22,7 +22,7 @@ return [
     'router' => [
         'routes' => [
             'login' => [
-                'type' => \Zend\Router\Http\Regex::class,
+                'type' => \Laminas\Router\Http\Regex::class,
                 'options' => [
                     'regex' => '/login(/.*)?',
                     'spec' => '/login',
