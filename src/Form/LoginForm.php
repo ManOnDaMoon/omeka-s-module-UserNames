@@ -1,7 +1,7 @@
 <?php
 namespace UserNames\Form;
 
-use Zend\Form\Form;
+use Laminas\Form\Form;
 
 class LoginForm extends Form
 {

@@ -9,7 +9,7 @@ use Omeka\Api\Adapter\AbstractEntityAdapter;
 use UserNames\Api\Representation\UserNameRepresentation;
 use UserNames\Entity\UserNames;
 use Omeka\Stdlib\Message;
-use Zend\Validator\Regex;
+use Laminas\Validator\Regex;
 
 class UserNameAdapter extends AbstractEntityAdapter
 {

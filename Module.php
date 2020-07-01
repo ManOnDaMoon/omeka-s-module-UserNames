@@ -2,17 +2,17 @@
 namespace UserNames;
 
 use Omeka\Module\AbstractModule;
-use Zend\Mvc\MvcEvent;
-use Zend\Mvc\Controller\AbstractController;
-use Zend\View\Renderer\PhpRenderer;
-use Zend\ServiceManager\ServiceLocatorInterface;
-use Zend\EventManager\SharedEventManagerInterface;
-use Zend\EventManager\EventInterface;
+use Laminas\Mvc\MvcEvent;
+use Laminas\Mvc\Controller\AbstractController;
+use Laminas\View\Renderer\PhpRenderer;
+use Laminas\ServiceManager\ServiceLocatorInterface;
+use Laminas\EventManager\SharedEventManagerInterface;
+use Laminas\EventManager\EventInterface;
 use Omeka\Permissions\Acl;
 use Omeka\Api\Exception\ValidationException;
 use Omeka\Stdlib\ErrorStore;
 use Omeka\Stdlib\Message;
-use Zend\Validator\Regex;
+use Laminas\Validator\Regex;
 use UserNames\Form\ConfigForm;
 use Omeka\Settings\Settings;
 use Composer\Semver\Comparator;
@@ -26,7 +26,7 @@ class Module extends AbstractModule
     protected $errorStore;
 
     /**
-     * Attach to Zend and Omeka specific listeners
+     * Attach to Laminas and Omeka specific listeners
      */
     public function attachListeners(
             SharedEventManagerInterface $sharedEventManager)
