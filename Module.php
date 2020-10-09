@@ -309,15 +309,18 @@ class Module extends AbstractModule
             $data = $response->getContent();
 
             $userName['user'] = $data->getId();
-            $userName['o-module-usernames:username'] = $request->getContent()['o-module-usernames:username'];
+            if ($content = $request->getContent())
+            {
+                $userName['o-module-usernames:username'] = $content['o-module-usernames:username'];
 
-            $searchResponse = $api->search('usernames', ['user' => $userName['user']]);
-            if (empty($searchResponse->getContent())) {
-                //create
-                $response = $api->create('usernames', $userName);
-            } else {
-                // update
-                $response = $api->update('usernames', $searchResponse->getContent()[0]->id(), $userName);
+                $searchResponse = $api->search('usernames', ['user' => $userName['user']]);
+                if (empty($searchResponse->getContent())) {
+                    //create
+                    $response = $api->create('usernames', $userName);
+                } else {
+                    // update
+                    $response = $api->update('usernames', $searchResponse->getContent()[0]->id(), $userName);
+                }
             }
         }
     }
