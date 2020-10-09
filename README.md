@@ -6,7 +6,7 @@ Users or administrators can setup user names in the Users configuration panel. U
 
 ## Installing / Getting started
 
-UserNames is compatible with Omeka S v2.
+UserNames requires Omeka S v3.
 
 * Download and unzip in your `omeka-s/modules` directory.
 * Rename the uncompressed folder to `UserNames`.
@@ -20,7 +20,7 @@ This module includes the following features:
 * Associate a user name your users' accounts on an Omeka S install. These user names are unique to each user.
 * Log in using either the user email, as usual, or using the configured user name.
 * User names are distinct from display names.
-* Full compatibility with RestrictedSites module (*starting v0.11*): use usernames even on your public sites that require authentification, and get user activation emails containing the defined username.
+* Full compatibility with RestrictedSites module: use usernames even on your public sites that require authentification, and get user activation emails containing the defined username.
 * Built-in EN and FR localization
 
 ### Set-up a user name
@@ -60,7 +60,7 @@ See the Issues page.
 
 ## Contributing
 
-Contributions are welcome. The module is in early development stage and could do with more advanced usage and testing.
+Contributions are welcome. Please use Issues and Pull Requests workflows to contribute.
 
 ## Links
 
