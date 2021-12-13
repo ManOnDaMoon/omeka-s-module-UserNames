@@ -1,21 +1,21 @@
 <?php
 namespace UserNames;
 
-use Omeka\Module\AbstractModule;
-use Laminas\Mvc\MvcEvent;
-use Laminas\Mvc\Controller\AbstractController;
-use Laminas\View\Renderer\PhpRenderer;
-use Laminas\ServiceManager\ServiceLocatorInterface;
-use Laminas\EventManager\SharedEventManagerInterface;
+use Composer\Semver\Comparator;
 use Laminas\EventManager\EventInterface;
-use Omeka\Permissions\Acl;
+use Laminas\EventManager\SharedEventManagerInterface;
+use Laminas\Mvc\Controller\AbstractController;
+use Laminas\Mvc\MvcEvent;
+use Laminas\ServiceManager\ServiceLocatorInterface;
+use Laminas\Validator\Regex;
+use Laminas\View\Renderer\PhpRenderer;
 use Omeka\Api\Exception\ValidationException;
+use Omeka\Module\AbstractModule;
+use Omeka\Permissions\Acl;
+use Omeka\Settings\Settings;
 use Omeka\Stdlib\ErrorStore;
 use Omeka\Stdlib\Message;
-use Laminas\Validator\Regex;
 use UserNames\Form\ConfigForm;
-use Omeka\Settings\Settings;
-use Composer\Semver\Comparator;
 
 class Module extends AbstractModule
 {
@@ -216,51 +216,43 @@ class Module extends AbstractModule
 
         /** @var Acl $acl */
         $acl = $this->getServiceLocator()->get('Omeka\Acl');
-        $acl->allow(null, [
-            'UserNames\Controller\Login',
-        ], null);
+        $acl
+            ->allow(
+                null,
+                ['UserNames\Controller\Login'],
+                null
+            );
 
         // Add autorizations to UserNameAdapter for all roles
-        $acl->allow(
-            'editor',
-            'UserNames\Api\Adapter\UserNameAdapter',
-            ['read', 'update', 'search']
-            );
-        $acl->allow(
-            'reviewer',
-            'UserNames\Api\Adapter\UserNameAdapter',
-            ['read', 'update', 'search']
-            );
-        $acl->allow(
-            'researcher',
-            'UserNames\Api\Adapter\UserNameAdapter',
-            ['read', 'update', 'search']
-            );
-        $acl->allow(
-            'author',
-            'UserNames\Api\Adapter\UserNameAdapter',
-            ['read', 'update', 'search']
-            );
 
-        $acl->allow(
-            'editor',
-            'UserNames\Entity\UserNames',
-            ['read', 'update', 'search']
-            );
-        $acl->allow(
-            'reviewer',
-            'UserNames\Entity\UserNames',
-            ['read', 'update', 'search']
-            );
-        $acl->allow(
-            'researcher',
-            'UserNames\Entity\UserNames',
-            ['read', 'update', 'search']
-            );
-        $acl->allow(
-            'author',
-            'UserNames\Entity\UserNames',
-            ['read', 'update', 'search']
+        // Only admins can update any username (set by default).
+        // Other users can only read and search.
+        $roles = $acl->getRoles();
+        $adminRoles = [Acl::ROLE_GLOBAL_ADMIN, Acl::ROLE_SITE_ADMIN];
+        $otherRoles = array_diff($roles, $adminRoles);
+        $acl
+            ->allow(
+                $otherRoles,
+                [
+                    \UserNames\Api\Adapter\UserNameAdapter::class,
+                    \UserNames\Entity\UserNames::class,
+                ],
+                [
+                    'read',
+                    'search',
+                ]
+            )
+            // Other users can only update their own username.
+            ->allow(
+                $otherRoles,
+                [\UserNames\Api\Adapter\UserNameAdapter::class],
+                ['update']
+            )
+            ->allow(
+                $otherRoles,
+                [\UserNames\Entity\UserNames::class],
+                ['update'],
+                new \Omeka\Permissions\Assertion\IsSelfAssertion
             );
     }
 
@@ -315,7 +307,7 @@ class Module extends AbstractModule
 
                 $searchResponse = $api->search('usernames', ['user' => $userName['user']]);
                 if (empty($searchResponse->getContent())) {
-                    //create
+                    // create
                     $response = $api->create('usernames', $userName);
                 } else {
                     // update
