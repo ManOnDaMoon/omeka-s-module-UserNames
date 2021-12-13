@@ -338,7 +338,7 @@ class Module extends AbstractModule
         }
     }
 
-    public function addError($property, Message $message)
+    protected function addError($property, Message $message)
     {
         if (!$this->errorStore) {
             $this->errorStore = new ErrorStore();
@@ -346,7 +346,7 @@ class Module extends AbstractModule
         $this->errorStore->addError($property, $message);
     }
 
-    public function throwValidationExceptionIfErrors()
+    protected function throwValidationExceptionIfErrors()
     {
         if ($this->errorStore && $this->errorStore->hasErrors()) {
             $validationException = new ValidationException();
@@ -357,48 +357,21 @@ class Module extends AbstractModule
 
     public function validateUserName(EventInterface $event)
     {
-        // TODO : Most of this code duplicates UserNameAdapter::validateEntity(). Needs refactoring.
         $request = $event->getParam('request');
         $userNameProperty = 'o-module-usernames:username';
         $userName = $request->getContent()[$userNameProperty];
 
-        // Empty username
-        if (!$userName) {
-            $this->addError($userNameProperty, new Message(
-                'The user name cannot be empty.' // @translate
-                ));
-        }
-
-        // Username length
-        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
-        $userNamesMinLength = $globalSettings->get('usernames_min_length');
-        $userNamesMaxLength = $globalSettings->get('usernames_max_length');
-        if (strlen($userName) < $userNamesMinLength
-            || strlen($userName) > $userNamesMaxLength) {
-            $this->addError($userNameProperty, new Message(
-                'User name must be between %1$s and %2$s characters.', // @translate
-                $userNamesMinLength, $userNamesMaxLength
-                ));
-        }
-
-        // Invalid username
-        $validator = new Regex('#^[a-zA-Z0-9.*@+!\-_%\#\^&$]*$#u');
-        if (!$validator->isValid($userName)) {
-            $this->addError($userNameProperty, new Message(
-                'Whitespace is not allowed. Only these special characters may be used: %s', // @translate
-                ' + ! @ # $ % ^ & * . - _'
-                ));
-        }
-
-        // Existing username
-        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        $searchResponse = $api->search('usernames', ['userName' => $userName]);
-        if (!empty($searchResponse->getContent())) {
-            // Username exists. Warn.
-            $this->addError($userNameProperty, new Message(
-                'The user name %s is already taken.', // @translate
-                $userName
-                ));
+        $userNameAdapter = $this->getServiceLocator()->get('Omeka\ApiAdapterManager')->get('usernames');
+        $userNameEntity = new \UserNames\Entity\UserNames;
+        $userNameEntity->setUserName($userName);
+        $this->errorStore = new ErrorStore();
+        $userNameAdapter->validateEntity($userNameEntity, $this->errorStore);
+        // Only the user name is validated here.
+        $errors = $this->errorStore->getErrors();
+        if (!empty($errors['o-module-usernames:username'])) {
+            foreach ($errors['o-module-usernames:username'] as $message) {
+                $this->addError($userNameProperty, $message);
+            }
         }
 
         $this->throwValidationExceptionIfErrors();
