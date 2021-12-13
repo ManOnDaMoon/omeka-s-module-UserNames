@@ -225,14 +225,16 @@ class Module extends AbstractModule
 
         // Add autorizations to UserNameAdapter for all roles
 
-        // Only admins can update any username (set by default).
-        // Other users can only read and search.
+        // Admins can create, read, search, update any username by default.
+
         $roles = $acl->getRoles();
         $adminRoles = [Acl::ROLE_GLOBAL_ADMIN, Acl::ROLE_SITE_ADMIN];
         $otherRoles = array_diff($roles, $adminRoles);
         $acl
+            // Let anybody, included anonymous users, search any username,
+            // because the user name is designed for public use.
             ->allow(
-                $otherRoles,
+                null,
                 [
                     \UserNames\Api\Adapter\UserNameAdapter::class,
                     \UserNames\Entity\UserNames::class,
