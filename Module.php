@@ -226,6 +226,7 @@ class Module extends AbstractModule
         // Add autorizations to UserNameAdapter for all roles
 
         // Admins can create, read, search, update any username by default.
+        // Deletion is automatic at database level, but included here for rights.
 
         $roles = $acl->getRoles();
         $adminRoles = [Acl::ROLE_GLOBAL_ADMIN, Acl::ROLE_SITE_ADMIN];
@@ -252,18 +253,26 @@ class Module extends AbstractModule
                     \UserNames\Api\Adapter\UserNameAdapter::class,
                     \UserNames\Entity\UserNames::class,
                 ],
-                ['create']
+                [
+                    'create',
+                ]
             )
-            // Other users can only update their own username.
+            // Other users can only update or delete their own username.
             ->allow(
                 $otherRoles,
                 [\UserNames\Api\Adapter\UserNameAdapter::class],
-                ['update']
+                [
+                    'update',
+                    'delete',
+                ]
             )
             ->allow(
                 $otherRoles,
                 [\UserNames\Entity\UserNames::class],
-                ['update'],
+                [
+                    'update',
+                    'delete',
+                ],
                 new \Omeka\Permissions\Assertion\IsSelfAssertion
             );
     }
