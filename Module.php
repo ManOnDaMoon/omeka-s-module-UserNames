@@ -244,6 +244,16 @@ class Module extends AbstractModule
                     'search',
                 ]
             )
+            // Let any user creates a user name, included role "guest" for open
+            // registration with module Guest.
+            ->allow(
+                $otherRoles,
+                [
+                    \UserNames\Api\Adapter\UserNameAdapter::class,
+                    \UserNames\Entity\UserNames::class,
+                ],
+                ['create']
+            )
             // Other users can only update their own username.
             ->allow(
                 $otherRoles,
