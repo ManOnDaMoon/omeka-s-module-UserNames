@@ -1,21 +1,21 @@
 <?php
 namespace UserNames;
 
-use Omeka\Module\AbstractModule;
-use Laminas\Mvc\MvcEvent;
-use Laminas\Mvc\Controller\AbstractController;
-use Laminas\View\Renderer\PhpRenderer;
-use Laminas\ServiceManager\ServiceLocatorInterface;
-use Laminas\EventManager\SharedEventManagerInterface;
+use Composer\Semver\Comparator;
 use Laminas\EventManager\EventInterface;
-use Omeka\Permissions\Acl;
+use Laminas\EventManager\SharedEventManagerInterface;
+use Laminas\Mvc\Controller\AbstractController;
+use Laminas\Mvc\MvcEvent;
+use Laminas\ServiceManager\ServiceLocatorInterface;
+use Laminas\Validator\Regex;
+use Laminas\View\Renderer\PhpRenderer;
 use Omeka\Api\Exception\ValidationException;
+use Omeka\Module\AbstractModule;
+use Omeka\Permissions\Acl;
+use Omeka\Settings\Settings;
 use Omeka\Stdlib\ErrorStore;
 use Omeka\Stdlib\Message;
-use Laminas\Validator\Regex;
 use UserNames\Form\ConfigForm;
-use Omeka\Settings\Settings;
-use Composer\Semver\Comparator;
 
 class Module extends AbstractModule
 {
@@ -216,51 +216,64 @@ class Module extends AbstractModule
 
         /** @var Acl $acl */
         $acl = $this->getServiceLocator()->get('Omeka\Acl');
-        $acl->allow(null, [
-            'UserNames\Controller\Login',
-        ], null);
+        $acl
+            ->allow(
+                null,
+                ['UserNames\Controller\Login'],
+                null
+            );
 
         // Add autorizations to UserNameAdapter for all roles
-        $acl->allow(
-            'editor',
-            'UserNames\Api\Adapter\UserNameAdapter',
-            ['read', 'update', 'search']
-            );
-        $acl->allow(
-            'reviewer',
-            'UserNames\Api\Adapter\UserNameAdapter',
-            ['read', 'update', 'search']
-            );
-        $acl->allow(
-            'researcher',
-            'UserNames\Api\Adapter\UserNameAdapter',
-            ['read', 'update', 'search']
-            );
-        $acl->allow(
-            'author',
-            'UserNames\Api\Adapter\UserNameAdapter',
-            ['read', 'update', 'search']
-            );
 
-        $acl->allow(
-            'editor',
-            'UserNames\Entity\UserNames',
-            ['read', 'update', 'search']
-            );
-        $acl->allow(
-            'reviewer',
-            'UserNames\Entity\UserNames',
-            ['read', 'update', 'search']
-            );
-        $acl->allow(
-            'researcher',
-            'UserNames\Entity\UserNames',
-            ['read', 'update', 'search']
-            );
-        $acl->allow(
-            'author',
-            'UserNames\Entity\UserNames',
-            ['read', 'update', 'search']
+        // Admins can create, read, search, update any username by default.
+        // Deletion is automatic at database level, but included here for rights.
+
+        $roles = $acl->getRoles();
+        $adminRoles = [Acl::ROLE_GLOBAL_ADMIN, Acl::ROLE_SITE_ADMIN];
+        $otherRoles = array_diff($roles, $adminRoles);
+        $acl
+            // Let anybody, included anonymous users, search any username,
+            // because the user name is designed for public use.
+            ->allow(
+                null,
+                [
+                    \UserNames\Api\Adapter\UserNameAdapter::class,
+                    \UserNames\Entity\UserNames::class,
+                ],
+                [
+                    'read',
+                    'search',
+                ]
+            )
+            // Let any user creates a user name, included role "guest" for open
+            // registration with module Guest.
+            ->allow(
+                $otherRoles,
+                [
+                    \UserNames\Api\Adapter\UserNameAdapter::class,
+                    \UserNames\Entity\UserNames::class,
+                ],
+                [
+                    'create',
+                ]
+            )
+            // Other users can only update or delete their own username.
+            ->allow(
+                $otherRoles,
+                [\UserNames\Api\Adapter\UserNameAdapter::class],
+                [
+                    'update',
+                    'delete',
+                ]
+            )
+            ->allow(
+                $otherRoles,
+                [\UserNames\Entity\UserNames::class],
+                [
+                    'update',
+                    'delete',
+                ],
+                new \Omeka\Permissions\Assertion\IsSelfAssertion
             );
     }
 
@@ -315,7 +328,7 @@ class Module extends AbstractModule
 
                 $searchResponse = $api->search('usernames', ['user' => $userName['user']]);
                 if (empty($searchResponse->getContent())) {
-                    //create
+                    // create
                     $response = $api->create('usernames', $userName);
                 } else {
                     // update
@@ -325,7 +338,7 @@ class Module extends AbstractModule
         }
     }
 
-    public function addError($property, Message $message)
+    protected function addError($property, Message $message)
     {
         if (!$this->errorStore) {
             $this->errorStore = new ErrorStore();
@@ -333,7 +346,7 @@ class Module extends AbstractModule
         $this->errorStore->addError($property, $message);
     }
 
-    public function throwValidationExceptionIfErrors()
+    protected function throwValidationExceptionIfErrors()
     {
         if ($this->errorStore && $this->errorStore->hasErrors()) {
             $validationException = new ValidationException();
@@ -344,48 +357,21 @@ class Module extends AbstractModule
 
     public function validateUserName(EventInterface $event)
     {
-        // TODO : Most of this code duplicates UserNameAdapter::validateEntity(). Needs refactoring.
         $request = $event->getParam('request');
         $userNameProperty = 'o-module-usernames:username';
         $userName = $request->getContent()[$userNameProperty];
 
-        // Empty username
-        if (!$userName) {
-            $this->addError($userNameProperty, new Message(
-                'The user name cannot be empty.' // @translate
-                ));
-        }
-
-        // Username length
-        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
-        $userNamesMinLength = $globalSettings->get('usernames_min_length');
-        $userNamesMaxLength = $globalSettings->get('usernames_max_length');
-        if (strlen($userName) < $userNamesMinLength
-            || strlen($userName) > $userNamesMaxLength) {
-            $this->addError($userNameProperty, new Message(
-                'User name must be between %1$s and %2$s characters.', // @translate
-                $userNamesMinLength, $userNamesMaxLength
-                ));
-        }
-
-        // Invalid username
-        $validator = new Regex('#^[a-zA-Z0-9.*@+!\-_%\#\^&$]*$#u');
-        if (!$validator->isValid($userName)) {
-            $this->addError($userNameProperty, new Message(
-                'Whitespace is not allowed. Only these special characters may be used: %s', // @translate
-                ' + ! @ # $ % ^ & * . - _'
-                ));
-        }
-
-        // Existing username
-        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        $searchResponse = $api->search('usernames', ['userName' => $userName]);
-        if (!empty($searchResponse->getContent())) {
-            // Username exists. Warn.
-            $this->addError($userNameProperty, new Message(
-                'The user name %s is already taken.', // @translate
-                $userName
-                ));
+        $userNameAdapter = $this->getServiceLocator()->get('Omeka\ApiAdapterManager')->get('usernames');
+        $userNameEntity = new \UserNames\Entity\UserNames;
+        $userNameEntity->setUserName($userName);
+        $this->errorStore = new ErrorStore();
+        $userNameAdapter->validateEntity($userNameEntity, $this->errorStore);
+        // Only the user name is validated here.
+        $errors = $this->errorStore->getErrors();
+        if (!empty($errors['o-module-usernames:username'])) {
+            foreach ($errors['o-module-usernames:username'] as $message) {
+                $this->addError($userNameProperty, $message);
+            }
         }
 
         $this->throwValidationExceptionIfErrors();
