@@ -6,7 +6,7 @@ Users or administrators can setup user names in the Users configuration panel. U
 
 ## Installing / Getting started
 
-UserNames requires Omeka S v3.
+Starting v1.2, UserNames requires Omeka S v4.
 
 * Download and unzip in your `omeka-s/modules` directory.
 * Rename the uncompressed folder to `UserNames`.
@@ -70,7 +70,13 @@ Some code and logic based on other Omeka S modules:
 * MetaDataBrowse: https://github.com/omeka-s-modules/MetadataBrowse
 * Omeka-S main repository: https://github.com/omeka/omeka-s
 
-Check out the RestrictedSites module : https://github.com/ManOnDaMoon/omeka-s-module-RestrictedSites
+Check out my other modules:
+
+* RestrictedSites: https://github.com/ManOnDaMoon/omeka-s-module-RestrictedSites
+* UserNames: https://github.com/ManOnDaMoon/omeka-s-module-UserNames
+* RoleBasedNavigation: https://github.com/ManOnDaMoon/omeka-s-module-RoleBasedNavigation
+* Sitemaps: https://github.com/ManOnDaMoon/omeka-s-module-Sitemaps
+* Siteswitcher: https://github.com/ManOnDaMoon/omeka-s-module-SiteSwitcher
 
 ## Licensing
 
