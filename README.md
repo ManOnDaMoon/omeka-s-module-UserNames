@@ -78,6 +78,8 @@ Check out my other modules:
 * Sitemaps: https://github.com/ManOnDaMoon/omeka-s-module-Sitemaps
 * Siteswitcher: https://github.com/ManOnDaMoon/omeka-s-module-SiteSwitcher
 
+[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/H2H0IPOUY)
+
 ## Licensing
 
 The code in this project is licensed under GPLv3.
