@@ -142,7 +142,7 @@ class Module extends AbstractModule
         $connection->exec('DROP TABLE `user_names`');
 
         /** @var Settings $globalSettings */
-        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
+        $globalSettings = $serviceLocator->get('Omeka\Settings');
         $globalSettings->delete('usernames_min_length');
         $globalSettings->delete('usernames_max_length');
     }
